@@ -8,6 +8,10 @@ export type Habit = {
   created?: number;
 };
 
+export type HabitProps = {
+  habit: Habit;
+};
+
 type Store = {
   loaded?: boolean;
   id?: string;

@@ -3,11 +3,17 @@ import React from "react";
 import { Habit } from "../components/Habit";
 import { CreateModal } from "../components/modals/CreateModal";
 import { Page } from "../components/Page";
-import { useUser } from "../state/user";
+import { Habit as HabitType, useUser } from "../state/user";
+import { Reorder } from "framer-motion";
 
 export default function Home() {
   const { habits, createHabit, updateUserInfo } = useUser();
   const [showCreateModal, setShowCreateModal] = React.useState(false);
+  const [habitsList, setHabitsList] = React.useState<HabitType[]>();
+
+  React.useEffect(() => {
+    setHabitsList(habits);
+  }, [habits]);
 
   React.useEffect(() => {
     updateUserInfo();
@@ -26,7 +32,17 @@ export default function Home() {
         </div>
 
         <div className="flex w-full max-w-full flex-col gap-2 md:max-w-[750px]">
-          {habits?.map((habit) => <Habit {...habit} />)}
+          <Reorder.Group
+            axis="y"
+            onReorder={setHabitsList}
+            values={habitsList ?? []}
+          >
+            <div className="flex w-full max-w-full flex-col gap-2 md:max-w-[750px]">
+              {habitsList?.map((habit) => (
+                <Habit habit={habit} key={habit.id} />
+              ))}
+            </div>
+          </Reorder.Group>
 
           <button
             className="flex h-24 w-full items-center justify-center gap-2 rounded-lg bg-gray text-xl font-bold duration-100 hover:bg-opacity-80"

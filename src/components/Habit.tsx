@@ -1,16 +1,17 @@
 import classNames from "classnames";
-import { Trash } from "lucide-react";
+import { Trash, Grip } from "lucide-react";
 import React from "react";
-import { Habit as HabitType, useUser } from "../state/user";
+import { HabitProps, useUser } from "../state/user";
 import { api } from "../utils/api";
 import { calculateStreaks, getLast365Days } from "../utils/utils";
 import { HabitCube } from "./HabitCube";
 import { ConfirmModal } from "./modals/ConfirmModal";
+import { Reorder, useDragControls } from "framer-motion";
 
-export const Habit: React.FC<HabitType> = ({ id, name, completed }) => {
+export const Habit: React.FC<HabitProps> = ({ habit }) => {
   const { deleteHabit, renameHabit } = useUser();
-  const [habitName, setHabitName] = React.useState(name);
-  const [completions, setCompletions] = React.useState(completed);
+  const [habitName, setHabitName] = React.useState(habit.name);
+  const [completions, setCompletions] = React.useState(habit.completed);
   const [showDeleteModal, setShowDeleteModal] = React.useState(false);
   const ref = React.useRef<HTMLDivElement | null>(null);
   const last365Days = React.useMemo(getLast365Days, []);
@@ -39,7 +40,7 @@ export const Habit: React.FC<HabitType> = ({ id, name, completed }) => {
     setCompletions(newCompletions);
 
     await api.post("/habits/log", {
-      id: id,
+      id: habit.id,
       day: day,
     });
   };
@@ -51,7 +52,7 @@ export const Habit: React.FC<HabitType> = ({ id, name, completed }) => {
     setCompletions(newCompletions);
 
     await api.post("/habits/unlog", {
-      id: id,
+      id: habit.id,
       day: day,
     });
   };
@@ -74,19 +75,26 @@ export const Habit: React.FC<HabitType> = ({ id, name, completed }) => {
   }, [last365Days]);
 
   const rename = async () => {
-    if (habitName === name) return;
+    if (habitName === habit.name) return;
 
-    await renameHabit(id, habitName);
+    await renameHabit(habit.id, habitName);
   };
 
+  const dragControls = useDragControls();
+
   return (
-    <>
+    <Reorder.Item
+      value={habit}
+      id={habit.id}
+      dragListener={false}
+      dragControls={dragControls}
+    >
       {showDeleteModal && (
         <ConfirmModal
           description="Deleted habits can't be recovered"
           onCancel={() => setShowDeleteModal(false)}
           onConfirm={() => {
-            deleteHabit(id);
+            deleteHabit(habit.id);
             setShowDeleteModal(false);
           }}
         />
@@ -143,10 +151,17 @@ export const Habit: React.FC<HabitType> = ({ id, name, completed }) => {
           </div>
 
           <button
-            className="min-w-fit cursor-pointer p-2 duration-100 group-hover:opacity-100 md:opacity-0"
+            className="min-w-fit cursor-pointer rounded-md p-2 duration-100 hover:bg-gray active:bg-light-gray group-hover:opacity-100 md:opacity-0"
             onClick={() => setShowDeleteModal(true)}
           >
             <Trash className="size-5 text-red-500" />
+          </button>
+
+          <button
+            className="min-w-fit cursor-pointer rounded-md p-2 duration-100 hover:bg-gray active:bg-light-gray group-hover:opacity-100 md:opacity-0"
+            onPointerDown={(event) => dragControls.start(event)}
+          >
+            <Grip className="size-5 text-white" />
           </button>
         </div>
 
@@ -188,6 +203,6 @@ export const Habit: React.FC<HabitType> = ({ id, name, completed }) => {
           </div>
         </div>
       </div>
-    </>
+    </Reorder.Item>
   );
 };
